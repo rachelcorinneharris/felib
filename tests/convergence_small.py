@@ -42,7 +42,9 @@ def build_cantilever_mesh(nelx=8, nely=2, L=10.0, H=1.0):
 
     mesh = felib.mesh.Mesh(nodes, elements)
     mesh.block(
-        name="All", elements=list(range(1, len(elements) + 1)), cell_type=felib.element.Quad4
+        name="All",
+        elements=list(range(1, len(elements) + 1)),
+        cell_type=felib.element.Quad4,
     )
 
     left_nodes = [j * (nelx + 1) + 1 for j in range(nely + 1)]
@@ -55,7 +57,14 @@ def build_cantilever_mesh(nelx=8, nely=2, L=10.0, H=1.0):
     return mesh, nodes, elements, left_nodes, right_nodes, L, H
 
 
-def run_case(element_obj, nelx, nely, traction_mag=0.02, youngs_modulus=1.0e03, poissons_ratio=0.0):
+def run_case(
+    element_obj,
+    nelx,
+    nely,
+    traction_mag=0.02,
+    youngs_modulus=1.0e03,
+    poissons_ratio=0.0,
+):
     """
     Run one cantilever case and return the Simulation object.
     """
@@ -136,7 +145,6 @@ def mesh_convergence_study():
     poissons_ratio = 0.0
     thickness = 1.0
 
-    # Refinement sequence. Increase or decrease this if runtime is too long.
     refinement_levels = [1, 2, 4, 8]
 
     hs = []
@@ -148,9 +156,7 @@ def mesh_convergence_study():
         nelx = 8 * r
         nely = 2 * r
 
-        mesh, nodes, elements, left_nodes, right_nodes, L, H = build_cantilever_mesh(
-            nelx=nelx, nely=nely
-        )
+        _, _, _, _, right_nodes, L, H = build_cantilever_mesh(nelx=nelx, nely=nely)
         h = L / nelx
 
         sim_lin = run_case(
@@ -173,8 +179,9 @@ def mesh_convergence_study():
         uy_lin = right_midnode_uy(sim_lin, right_nodes)
         uy_nl = right_midnode_uy(sim_nl, right_nodes)
 
-        # Analytical beam reference is downward, so it is negative.
-        uy_ref = -analytical_tip_deflection(traction_mag, L, H, youngs_modulus, thickness=thickness)
+        uy_ref = -analytical_tip_deflection(
+            traction_mag, L, H, youngs_modulus, thickness=thickness
+        )
 
         hs.append(h)
         lin_vals.append(uy_lin)
@@ -196,9 +203,34 @@ def mesh_convergence_study():
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 5), constrained_layout=True)
 
-    axes[0].plot(hs, lin_vals, "o-", label="CPE4")
-    axes[0].plot(hs, nl_vals, "s-", label="CPE4NL")
-    axes[0].plot(hs, refs, "k--", linewidth=2.0, label="Analytical beam theory")
+    axes[0].plot(
+        hs,
+        lin_vals,
+        color="tab:blue",
+        marker="o",
+        linestyle="-",
+        linewidth=1.8,
+        markersize=6,
+        label="CPE4",
+    )
+    axes[0].plot(
+        hs,
+        nl_vals,
+        color="tab:red",
+        marker="s",
+        linestyle="--",
+        linewidth=2.2,
+        markersize=6,
+        label="CPE4NL",
+    )
+    axes[0].plot(
+        hs,
+        refs,
+        color="k",
+        linestyle=":",
+        linewidth=2.0,
+        label="Analytical beam theory",
+    )
     axes[0].invert_xaxis()
     axes[0].set_xlabel("Element size h")
     axes[0].set_ylabel("Mid-height free-end $u_y$")
@@ -206,8 +238,26 @@ def mesh_convergence_study():
     axes[0].grid(True, alpha=0.3)
     axes[0].legend()
 
-    axes[1].loglog(hs, lin_err, "o-", label="CPE4 error")
-    axes[1].loglog(hs, nl_err, "s-", label="CPE4NL error")
+    axes[1].loglog(
+        hs,
+        lin_err,
+        color="tab:blue",
+        marker="o",
+        linestyle="-",
+        linewidth=1.8,
+        markersize=6,
+        label="CPE4 error",
+    )
+    axes[1].loglog(
+        hs,
+        nl_err,
+        color="tab:red",
+        marker="s",
+        linestyle="--",
+        linewidth=2.2,
+        markersize=6,
+        label="CPE4NL error",
+    )
     axes[1].invert_xaxis()
     axes[1].set_xlabel("Element size h")
     axes[1].set_ylabel("Absolute error in $u_y$")
@@ -276,8 +326,8 @@ def plot_finest_mesh_deformation():
 
     fig, ax = plt.subplots(1, 1, figsize=(11, 4.5), constrained_layout=True)
     plot_mesh(ax, np.zeros_like(u_lin), "Original mesh", "0.75", linestyle="--")
-    plot_mesh(ax, u_lin, "CPE4", "tab:blue")
-    plot_mesh(ax, u_nl, "CPE4NL", "tab:red")
+    plot_mesh(ax, u_lin, "CPE4", "tab:blue", linestyle="-")
+    plot_mesh(ax, u_nl, "CPE4NL", "tab:red", linestyle="--")
 
     ax.set_aspect("equal", adjustable="box")
     ax.set_xlabel("Deformed x-coordinate")
