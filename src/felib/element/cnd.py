@@ -559,24 +559,7 @@ class CPS4I(CPS4):
 
 
 class NLGeom(ContinuumElement, IsoparametricElement):
-    def green_lagrange_2d(self, p: NDArray, u: NDArray, xi: NDArray) -> NDArray:
-        dNdx = self.shape_gradient(p, xi)  # shape: (2, nnode)
-
-        ux = u[0::2]
-        uy = u[1::2]
-
-        gradu = np.array(
-            [
-                [dNdx[0] @ ux, dNdx[1] @ ux],
-                [dNdx[0] @ uy, dNdx[1] @ uy],
-            ],
-            dtype=float,
-        )
-
-        F = np.eye(2) + gradu
-        E = 0.5 * (F.T @ F - np.eye(2))
-        return E
-
+   
     def pack_green_lagrange(self, E: NDArray) -> NDArray:
         if self.ndir == 2 and self.nshr == 1:  # plane stress
             return np.array([E[0, 0], E[1, 1], 2.0 * E[0, 1]], dtype=float)
@@ -721,10 +704,10 @@ class NLGeom(ContinuumElement, IsoparametricElement):
             x = self.interpolate(p, xi)
 
             # Large strain kinematics
-            E = self.green_lagrange_2d(p, u, xi)
+            _, E = self.deformation_gradient_2d(p, u, xi)
             e = self.pack_green_lagrange(E)
 
-            E_prev = self.green_lagrange_2d(p, u - du, xi)
+            _, E_prev = self.deformation_gradient_2d(p, u - du, xi)
             e_prev = self.pack_green_lagrange(E_prev)
             de = (e - e_prev) / dt
 
